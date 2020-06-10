@@ -19,7 +19,7 @@ class PolarEncoder: public Pothos::Block
     using Class = PolarEncoder<T>;
 
     public:
-        PolarEncoder(size_t K, size_t N, const std::vector<bool>& frozenBits, bool systematic, size_t dimension);
+        PolarEncoder(size_t K, size_t N, const std::vector<bool>& frozenBits, size_t dimension);
         virtual ~PolarEncoder() = default;
 
         size_t K() const;
@@ -38,7 +38,7 @@ class PolarEncoder: public Pothos::Block
 };
 
 template <typename T>
-PolarEncoder<T>::PolarEncoder(size_t K, size_t N, const std::vector<bool>& frozenBits, bool systematic, size_t dimension):
+PolarEncoder<T>::PolarEncoder(size_t K, size_t N, const std::vector<bool>& frozenBits, size_t dimension):
     Pothos::Block(),
     _frozenBits(frozenBits)
 {
@@ -63,14 +63,10 @@ PolarEncoder<T>::PolarEncoder(size_t K, size_t N, const std::vector<bool>& froze
     // Block setup
     //
 
-    if(systematic) _polarEncoderUPtr.reset(new aff3ct::module::Encoder_polar_sys<T>(
-                                                   static_cast<int>(K),
-                                                   static_cast<int>(N),
-                                                   _frozenBits));
-    else           _polarEncoderUPtr.reset(new aff3ct::module::Encoder_polar<T>(
-                                                   static_cast<int>(K),
-                                                   static_cast<int>(N),
-                                                   _frozenBits));
+    _polarEncoderUPtr.reset(new aff3ct::module::Encoder_polar_sys<T>(
+         static_cast<int>(K),
+         static_cast<int>(N),
+         _frozenBits));
 
     this->setupInput(0, Pothos::DType(typeid(T), dimension));
     this->setupOutput(0, Pothos::DType(typeid(T), dimension));
@@ -137,12 +133,11 @@ static Pothos::Block* makePolarEncoder(
     const Pothos::DType& dtype,
     size_t K,
     size_t N,
-    const std::vector<bool>& frozenBits,
-    bool systematic)
+    const std::vector<bool>& frozenBits)
 {
 #define IfTypeThenReturn(T) \
     if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(T))) \
-        return new PolarEncoder<T>(K, N, frozenBits, systematic, dtype.dimension());
+        return new PolarEncoder<T>(K, N, frozenBits, dtype.dimension());
 
 #ifdef AFF3CT_MULTI_PREC
     IfTypeThenReturn(B_8)
