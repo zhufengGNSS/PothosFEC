@@ -277,8 +277,8 @@ PolarDecoderSCAN<BitType, RealType>::PolarDecoderSCAN(
                                           static_cast<int>(maxIters),
                                           this->_frozenBits));
 
-    this->registerCall(this, POTHOS_FCN_TUPLE(Class, maxIters));
-    this->registerProbe("maxIters");
+    this->registerCall(this, POTHOS_FCN_TUPLE(Class, maxIterations));
+    this->registerProbe("maxIterations");
 }
 
 template <typename BitType, typename RealType>
@@ -292,3 +292,106 @@ void PolarDecoderSCAN<BitType, RealType>::work()
 {
     this->workSIHO();
 }
+
+/**************************************************************************
+ * Factories
+ **************************************************************************/
+
+static Pothos::Block* makePolarDecoderASCL(
+    const Pothos::DType& bitDType,
+    const Pothos::DType& realDType,
+    size_t K,
+    size_t N,
+    size_t L,
+    const std::vector<bool>& frozenBits)
+{
+    if(bitDType.dimension() != realDType.dimension())
+    {
+        throw Pothos::InvalidArgumentException("Bit and real DTypes must have same dimension");
+    }
+
+    #define IfTypesThenReturnASCL(BT,RT) \
+        if((Pothos::DType::fromDType(bitDType, 1) == Pothos::DType(typeid(BT)))) \
+            if((Pothos::DType::fromDType(realDType, 1) == Pothos::DType(typeid(RT)))) \
+                return new PolarDecoderASCL<BT,RT>(K, N, L, frozenBits, bitDType.dimension());
+
+#ifdef AFF3CT_MULTI_PREC
+    IfTypesThenReturnASCL(B_32,R_32)
+    IfTypesThenReturnASCL(B_64,R_64)
+#else
+    IfTypesThenReturnASCL(B,R)
+#endif
+
+    throw Pothos::InvalidArgumentException("Invalid types: bit="+bitDType.toString()+", real="+realDType.toString());
+}
+
+static Pothos::Block* makePolarDecoderSC(
+    const Pothos::DType& bitDType,
+    const Pothos::DType& realDType,
+    size_t K,
+    size_t N,
+    const std::vector<bool>& frozenBits)
+{
+    if(bitDType.dimension() != realDType.dimension())
+    {
+        throw Pothos::InvalidArgumentException("Bit and real DTypes must have same dimension");
+    }
+
+    #define IfTypesThenReturnSC(BT,RT) \
+        if((Pothos::DType::fromDType(bitDType, 1) == Pothos::DType(typeid(BT)))) \
+            if((Pothos::DType::fromDType(realDType, 1) == Pothos::DType(typeid(RT)))) \
+                return new PolarDecoderSC<BT,RT>(K, N, frozenBits, bitDType.dimension());
+
+#ifdef AFF3CT_MULTI_PREC
+    IfTypesThenReturnSC(B_32,R_32)
+    IfTypesThenReturnSC(B_64,R_64)
+#else
+    IfTypesThenReturnSC(B,R)
+#endif
+
+    throw Pothos::InvalidArgumentException("Invalid types: bit="+bitDType.toString()+", real="+realDType.toString());
+}
+
+static Pothos::Block* makePolarDecoderSCAN(
+    const Pothos::DType& bitDType,
+    const Pothos::DType& realDType,
+    size_t K,
+    size_t N,
+    size_t maxIterations,
+    const std::vector<bool>& frozenBits)
+{
+    if(bitDType.dimension() != realDType.dimension())
+    {
+        throw Pothos::InvalidArgumentException("Bit and real DTypes must have same dimension");
+    }
+
+    #define IfTypesThenReturnSCAN(BT,RT) \
+        if((Pothos::DType::fromDType(bitDType, 1) == Pothos::DType(typeid(BT)))) \
+            if((Pothos::DType::fromDType(realDType, 1) == Pothos::DType(typeid(RT)))) \
+                return new PolarDecoderSCAN<BT,RT>(K, N, maxIterations, frozenBits, bitDType.dimension());
+
+#ifdef AFF3CT_MULTI_PREC
+    IfTypesThenReturnSCAN(B_32,R_32)
+    IfTypesThenReturnSCAN(B_64,R_64)
+#else
+    IfTypesThenReturnSCAN(B,R)
+#endif
+
+    throw Pothos::InvalidArgumentException("Invalid types: bit="+bitDType.toString()+", real="+realDType.toString());
+}
+
+/**************************************************************************
+ * Registrations
+ **************************************************************************/
+
+static Pothos::BlockRegistry registerPolarDecoderASCL(
+    "/fec/polar_decoder_ascl",
+    Pothos::Callable(&makePolarDecoderASCL));
+
+static Pothos::BlockRegistry registerPolarDecoderSC(
+    "/fec/polar_decoder_sc",
+    Pothos::Callable(&makePolarDecoderSC));
+
+static Pothos::BlockRegistry registerPolarDecoderSCAN(
+    "/fec/polar_decoder_scan",
+    Pothos::Callable(&makePolarDecoderSCAN));
