@@ -49,6 +49,7 @@ POTHOS_MODULE_UTIL(
         Source/GenericConvolution.cpp
         Source/LTETurboDecoder.cpp
         Source/LTETurboEncoder.cpp
+        Source/PolarEncoder.cpp
         Source/Utility.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/ModuleInfo.cpp
 
