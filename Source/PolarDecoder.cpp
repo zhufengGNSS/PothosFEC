@@ -13,13 +13,18 @@
 #include <memory>
 #include <vector>
 
-template <typename T>
+//
+// Declarations
+//
+
+// Base
+template <typename BitType, typename RealType>
 class PolarDecoder: public Pothos::Block
 {
-    using Class = PolarDecoder<T>;
+    using Class = PolarDecoder<BitType, RealType>;
 
     public:
-        PolarDecoder(size_t K, size_t N, const std::vector<bool>& frozenBits, bool systematic, size_t dimension);
+        PolarDecoder(const std::vector<bool>& frozenBits, size_t dimension);
         virtual ~PolarDecoder() = default;
 
         size_t K() const;
@@ -28,55 +33,50 @@ class PolarDecoder: public Pothos::Block
 
         std::vector<bool> frozenBits() const;
 
-        void work() override;
+        virtual void work() = 0;
 
-    private:
-        //std::unique_ptr<aff3ct::module::Decoder_polar<T>> _polarDecoderUPtr;
+    protected:
+        std::unique_ptr<aff3ct::module::Decoder> _polarDecoderUPtr;
 
         // Not accessible through AFF3CT
         std::vector<bool> _frozenBits;
+
+        void workSIHO();
 };
 
-template <typename T>
-PolarDecoder<T>::PolarDecoder(size_t K, size_t N, const std::vector<bool>& frozenBits, bool systematic, size_t dimension):
+template <typename BitType, typename RealType>
+class PolarDecoderASCL: public PolarDecoder<BitType, RealType>
+{
+    using Class = PolarDecoderASCL<BitType, RealType>;
+
+    public:
+        PolarDecoderASCL(size_t K, size_t N, size_t L, const std::vector<bool>& frozenBits, size_t dimension);
+        virtual ~PolarDecoderASCL() = default;
+
+        size_t maxNumPaths() const;
+
+        void work() override;
+
+    private:
+        aff3ct::module::CRC<BitType> _crc;
+
+        // Not accessible through AFF3CT
+        size_t _L;
+};
+
+//
+// Implementation
+//
+
+// Base
+template <typename BitType, typename RealType>
+PolarDecoder<BitType, RealType>::PolarDecoder(const std::vector<bool>& frozenBits, size_t dimension):
     Pothos::Block(),
     _frozenBits(frozenBits)
 {
-    /*
-    //
-    // Input validation
-    //
+    this->setupInput(0, Pothos::DType(typeid(RealType), dimension));
+    this->setupOutput(0, Pothos::DType(typeid(BitType), dimension));
 
-    if(0 == K) throw Pothos::RangeException("K must be > 0");
-    if(0 == N) throw Pothos::RangeException("N must be > 0");
-
-    if(_frozenBits.size() != static_cast<size_t>(N))
-    {
-        throw Pothos::InvalidArgumentException("The frozen bits input must be of size N");
-    }
-    size_t numZeros = std::count(_frozenBits.begin(), _frozenBits.end(), false);
-    if(K != numZeros)
-    {
-        throw Pothos::InvalidArgumentException("The number of information bits in the frozen bits must match K");
-    }
-
-    //
-    // Block setup
-    //
-
-    if(systematic) _polarDecoderUPtr.reset(new aff3ct::module::Decoder_polar_sys<T>(
-                                                   static_cast<int>(K),
-                                                   static_cast<int>(N),
-                                                   _frozenBits));
-    else           _polarDecoderUPtr.reset(new aff3ct::module::Decoder_polar<T>(
-                                                   static_cast<int>(K),
-                                                   static_cast<int>(N),
-                                                   _frozenBits));
-
-    this->setupInput(0, Pothos::DType(typeid(T), dimension));
-    this->setupOutput(0, Pothos::DType(typeid(T), dimension));
-
-    */
     this->registerCall(this, POTHOS_FCN_TUPLE(Class, K));
     this->registerCall(this, POTHOS_FCN_TUPLE(Class, N));
     this->registerCall(this, POTHOS_FCN_TUPLE(Class, frozenBits));
@@ -86,30 +86,29 @@ PolarDecoder<T>::PolarDecoder(size_t K, size_t N, const std::vector<bool>& froze
     this->registerProbe("frozenBits");
 }
 
-template <typename T>
-size_t PolarDecoder<T>::K() const
+template <typename BitType, typename RealType>
+size_t PolarDecoder<BitType, RealType>::K() const
 {
-    return 0;
-    //return static_cast<size_t>(_polarDecoderUPtr->get_K());
+    return static_cast<size_t>(_polarDecoderUPtr->get_K());
 }
 
-template <typename T>
-size_t PolarDecoder<T>::N() const
+template <typename BitType, typename RealType>
+size_t PolarDecoder<BitType, RealType>::N() const
 {
-    return 0;
-    //return static_cast<size_t>(_polarDecoderUPtr->get_N());
+    return static_cast<size_t>(_polarDecoderUPtr->get_N());
 }
 
-template <typename T>
-std::vector<bool> PolarDecoder<T>::frozenBits() const
+template <typename BitType, typename RealType>
+std::vector<bool> PolarDecoder<BitType, RealType>::frozenBits() const
 {
     return _frozenBits;
 }
 
-template <typename T>
-void PolarDecoder<T>::work()
+template <typename BitType, typename RealType>
+void PolarDecoder<BitType, RealType>::workSIHO()
 {
-    /*
+    using DecoderSIHO = aff3ct::module::Decoder_SIHO<BitType, RealType>;
+
     const auto elems = this->workInfo().minElements;
     if(0 == elems) return;
 
@@ -123,12 +122,12 @@ void PolarDecoder<T>::work()
     const auto maxOutputFrames = elems / outputLen;
     const auto numFrames = std::min(maxInputFrames, maxOutputFrames);
 
-    const T* buffIn = input->buffer();
-    T* buffOut = output->buffer();
+    const RealType* buffIn = input->buffer();
+    BitType* buffOut = output->buffer();
 
     for(size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex)
     {
-        _polarDecoderUPtr->encode(buffIn, buffOut);
+        dynamic_cast<DecoderSIHO*>(_polarDecoderUPtr.get())->decode_siho(buffIn, buffOut);
 
         buffIn += inputLen;
         buffOut += outputLen;
@@ -136,32 +135,42 @@ void PolarDecoder<T>::work()
 
     input->consume(numFrames * inputLen);
     output->produce(numFrames * outputLen);
-    */
 }
 
-static Pothos::Block* makePolarDecoder(
-    const Pothos::DType& dtype,
+// ASCL
+template <typename BitType, typename RealType>
+PolarDecoderASCL<BitType, RealType>::PolarDecoderASCL(
     size_t K,
     size_t N,
+    size_t L,
     const std::vector<bool>& frozenBits,
-    bool systematic)
+    size_t dimension
+):
+    PolarDecoder<BitType, RealType>(frozenBits, dimension),
+    _crc(K, 0 /*TODO: size logic*/),
+    _L(L)
 {
-#define IfTypeThenReturn(T) \
-    if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(T))) \
-        return new PolarDecoder<T>(K, N, frozenBits, systematic, dtype.dimension());
+    // TODO: input validation
 
-#ifdef AFF3CT_MULTI_PREC
-    IfTypeThenReturn(B_8)
-    IfTypeThenReturn(B_16)
-    IfTypeThenReturn(B_32)
-    IfTypeThenReturn(B_64)
-#else
-    IfTypeThenReturn(B)
-#endif
+    this->_polarDecoderUPtr.reset(new aff3ct::module::Decoder_polar_ASCL_fast_CA_sys<BitType, RealType>(
+                                          static_cast<int>(K),
+                                          static_cast<int>(N),
+                                          static_cast<int>(L),
+                                          this->_frozenBits,
+                                          _crc));
 
-    throw Pothos::InvalidArgumentException("PolarDecoder: invalid dtype: "+dtype.name());
+    this->registerCall(this, POTHOS_FCN_TUPLE(Class, maxNumPaths));
+    this->registerProbe("K");
 }
 
-static Pothos::BlockRegistry registerPolarDecoder(
-    "/fec/polar_decoder",
-    Pothos::Callable(&makePolarDecoder));
+template <typename BitType, typename RealType>
+size_t PolarDecoderASCL<BitType, RealType>::maxNumPaths() const
+{
+    return _L;
+}
+
+template <typename BitType, typename RealType>
+void PolarDecoder<BitType, RealType>::work()
+{
+    this->workSIHO();
+}
