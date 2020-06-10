@@ -13,11 +13,14 @@
 #include <memory>
 #include <vector>
 
+/**************************************************************************
+ * Declarations
+ **************************************************************************/
+
 //
-// Declarations
+// Base
 //
 
-// Base
 template <typename BitType, typename RealType>
 class PolarDecoder: public Pothos::Block
 {
@@ -44,6 +47,10 @@ class PolarDecoder: public Pothos::Block
         void workSIHO();
 };
 
+//
+// ASCL
+//
+
 template <typename BitType, typename RealType>
 class PolarDecoderASCL: public PolarDecoder<BitType, RealType>
 {
@@ -65,10 +72,52 @@ class PolarDecoderASCL: public PolarDecoder<BitType, RealType>
 };
 
 //
-// Implementation
+// SC
 //
 
+template <typename BitType, typename RealType>
+class PolarDecoderSC: public PolarDecoder<BitType, RealType>
+{
+    using Class = PolarDecoderSC<BitType, RealType>;
+
+    public:
+        PolarDecoderSC(size_t K, size_t N, const std::vector<bool>& frozenBits, size_t dimension);
+        virtual ~PolarDecoderSC() = default;
+
+        size_t maxNumPaths() const;
+
+        void work() override;
+};
+
+//
+// SCAN
+//
+
+template <typename BitType, typename RealType>
+class PolarDecoderSCAN: public PolarDecoder<BitType, RealType>
+{
+    using Class = PolarDecoderSCAN<BitType, RealType>;
+
+    public:
+        PolarDecoderSCAN(size_t K, size_t N, size_t maxIters, const std::vector<bool>& frozenBits, size_t dimension);
+        virtual ~PolarDecoderSCAN() = default;
+
+        size_t maxIterations() const;
+
+        void work() override;
+
+    private:
+        size_t _maxIters;
+};
+
+/**************************************************************************
+ * Implementations
+ **************************************************************************/
+
+//
 // Base
+//
+
 template <typename BitType, typename RealType>
 PolarDecoder<BitType, RealType>::PolarDecoder(const std::vector<bool>& frozenBits, size_t dimension):
     Pothos::Block(),
@@ -137,7 +186,10 @@ void PolarDecoder<BitType, RealType>::workSIHO()
     output->produce(numFrames * outputLen);
 }
 
+//
 // ASCL
+//
+
 template <typename BitType, typename RealType>
 PolarDecoderASCL<BitType, RealType>::PolarDecoderASCL(
     size_t K,
@@ -160,7 +212,7 @@ PolarDecoderASCL<BitType, RealType>::PolarDecoderASCL(
                                           _crc));
 
     this->registerCall(this, POTHOS_FCN_TUPLE(Class, maxNumPaths));
-    this->registerProbe("K");
+    this->registerProbe("maxNumPaths");
 }
 
 template <typename BitType, typename RealType>
@@ -170,7 +222,73 @@ size_t PolarDecoderASCL<BitType, RealType>::maxNumPaths() const
 }
 
 template <typename BitType, typename RealType>
-void PolarDecoder<BitType, RealType>::work()
+void PolarDecoderASCL<BitType, RealType>::work()
+{
+    this->workSIHO();
+}
+
+//
+// SC
+//
+
+template <typename BitType, typename RealType>
+PolarDecoderSC<BitType, RealType>::PolarDecoderSC(
+    size_t K,
+    size_t N,
+    const std::vector<bool>& frozenBits,
+    size_t dimension
+):
+    PolarDecoder<BitType, RealType>(frozenBits, dimension)
+{
+    // TODO: input validation
+
+    this->_polarDecoderUPtr.reset(new aff3ct::module::Decoder_polar_SC_fast_sys<BitType, RealType>(
+                                          static_cast<int>(K),
+                                          static_cast<int>(N),
+                                          this->_frozenBits));
+}
+
+template <typename BitType, typename RealType>
+void PolarDecoderSC<BitType, RealType>::work()
+{
+    this->workSIHO();
+}
+
+//
+// SCAN
+//
+
+template <typename BitType, typename RealType>
+PolarDecoderSCAN<BitType, RealType>::PolarDecoderSCAN(
+    size_t K,
+    size_t N,
+    size_t maxIters,
+    const std::vector<bool>& frozenBits,
+    size_t dimension
+):
+    PolarDecoder<BitType, RealType>(frozenBits, dimension),
+    _maxIters(maxIters)
+{
+    // TODO: input validation
+
+    this->_polarDecoderUPtr.reset(new aff3ct::module::Decoder_polar_SCAN_naive_sys<BitType, RealType>(
+                                          static_cast<int>(K),
+                                          static_cast<int>(N),
+                                          static_cast<int>(maxIters),
+                                          this->_frozenBits));
+
+    this->registerCall(this, POTHOS_FCN_TUPLE(Class, maxIters));
+    this->registerProbe("maxIters");
+}
+
+template <typename BitType, typename RealType>
+size_t PolarDecoderSCAN<BitType, RealType>::maxIterations() const
+{
+    return _maxIters;
+}
+
+template <typename BitType, typename RealType>
+void PolarDecoderSCAN<BitType, RealType>::work()
 {
     this->workSIHO();
 }
