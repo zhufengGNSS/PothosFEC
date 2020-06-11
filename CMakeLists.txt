@@ -47,6 +47,7 @@ POTHOS_MODULE_UTIL(
         Source/ConvolutionDocs.cpp
         Source/errnoname.c
         Source/GenericConvolution.cpp
+        Source/ReedSolomonDecoder.cpp
         Source/ReedSolomonEncoder.cpp
         Source/LTETurboDecoder.cpp
         Source/LTETurboEncoder.cpp
