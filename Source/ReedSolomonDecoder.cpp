@@ -32,7 +32,11 @@ class ReedSolomonDecoder: public Pothos::Block
 
         std::vector<int> polyGenCoeffs() const;
 
-        void work() override;
+        template <typename _RT = RT>
+        EnableIfNotFloatingPoint<_RT> work();
+
+        template <typename _RT = RT>
+        EnableIfFloatingPoint<_RT> work();
 
     private:
         aff3ct::tools::RS_polynomial_generator _rsPolyGen;
@@ -100,7 +104,8 @@ std::vector<int> ReedSolomonDecoder<BT,RT>::polyGenCoeffs() const
 }
 
 template <typename BT, typename RT>
-void ReedSolomonDecoder<BT,RT>::work()
+template <typename _RT>
+EnableIfNotFloatingPoint<_RT> ReedSolomonDecoder<BT,RT>::work()
 {
     const auto elems = this->workInfo().minElements;
     if(0 == elems) return;
@@ -120,7 +125,39 @@ void ReedSolomonDecoder<BT,RT>::work()
 
     for(size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex)
     {
-        _decoder.decode_siho(buffIn, buffOut);
+        _decoder.decode_hiho(buffIn, buffOut);
+
+        buffIn += inputFrameSize;
+        buffOut += outputFrameSize;
+    }
+
+    input->consume(numFrames * inputFrameSize);
+    output->produce(numFrames * outputFrameSize);
+}
+
+template <typename BT, typename RT>
+template <typename _RT>
+EnableIfFloatingPoint<_RT> ReedSolomonDecoder<BT,RT>::work()
+{
+    const auto elems = this->workInfo().minElements;
+    if(0 == elems) return;
+
+    auto input = this->input(0);
+    auto output = this->output(0);
+
+    const auto inputFrameSize = this->N();
+    const auto outputFrameSize = this->K();
+
+    const auto maxInputFrames = elems / inputFrameSize;
+    const auto maxOutputFrames = elems / outputFrameSize;
+    const auto numFrames = std::min(maxInputFrames, maxOutputFrames);
+
+    const RT* buffIn = input->buffer();
+    BT* buffOut = output->buffer();
+
+    for(size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex)
+    {
+        _decoder.decode_hiho(buffIn, buffOut);
 
         buffIn += inputFrameSize;
         buffOut += outputFrameSize;
@@ -149,9 +186,9 @@ static Pothos::Block* makeReedSolomonDecoder(
 
 #ifdef AFF3CT_MULTI_PREC
     IfTypeThenReturn(B_8,Q_8)
-    //IfTypeThenReturn(B_16,Q_16)
-    //IfTypeThenReturn(B_32,Q_32)
-    //IfTypeThenReturn(B_64,Q_64)
+    IfTypeThenReturn(B_16,Q_16)
+    IfTypeThenReturn(B_32,Q_32)
+    IfTypeThenReturn(B_64,Q_64)
 #else
     IfTypeThenReturn(B,Q)
 #endif
