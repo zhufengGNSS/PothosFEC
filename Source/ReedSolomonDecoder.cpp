@@ -39,10 +39,16 @@ class ReedSolomonDecoder: public Pothos::Block
         aff3ct::module::Decoder_RS_std<BT,RT> _decoder;
 
         template <typename _RT = RT>
-        EnableIfNotFloatingPoint<_RT> _work();
+        inline EnableIfNotFloatingPoint<_RT> _decode(const RT* buffIn, BT* buffOut)
+        {
+            _decoder.decode_hiho(buffIn, buffOut);
+        }
 
         template <typename _RT = RT>
-        EnableIfFloatingPoint<_RT> _work();
+        inline EnableIfFloatingPoint<_RT> _decode(const RT* buffIn, BT* buffOut)
+        {
+            _decoder.decode_siho(buffIn, buffOut);
+        }
 };
 
 template <typename BT, typename RT>
@@ -108,14 +114,6 @@ std::vector<int> ReedSolomonDecoder<BT,RT>::polyGenCoeffs() const
 template <typename BT, typename RT>
 void ReedSolomonDecoder<BT,RT>::work()
 {
-    // SFINAE will determine which one to use.
-    this->_work();
-}
-
-template <typename BT, typename RT>
-template <typename _RT>
-EnableIfNotFloatingPoint<_RT> ReedSolomonDecoder<BT,RT>::_work()
-{
     const auto elems = this->workInfo().minElements;
     if(0 == elems) return;
 
@@ -135,40 +133,8 @@ EnableIfNotFloatingPoint<_RT> ReedSolomonDecoder<BT,RT>::_work()
 
     for(size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex)
     {
-        _decoder.decode_hiho(buffIn, buffOut);
-
-        buffIn += inputFrameSize;
-        buffOut += outputFrameSize;
-    }
-
-    input->consume(numFrames * inputFrameSize);
-    output->produce(numFrames * outputFrameSize);
-}
-
-template <typename BT, typename RT>
-template <typename _RT>
-EnableIfFloatingPoint<_RT> ReedSolomonDecoder<BT,RT>::_work()
-{
-    const auto elems = this->workInfo().minElements;
-    if(0 == elems) return;
-
-    auto input = this->input(0);
-    auto output = this->output(0);
-
-    const auto inputFrameSize = this->N();
-    const auto outputFrameSize = this->K();
-
-    const auto maxInputFrames = elems / inputFrameSize;
-    const auto maxOutputFrames = elems / outputFrameSize;
-    const auto numFrames = std::min(maxInputFrames, maxOutputFrames);
-    if(0 == numFrames) return;
-
-    const RT* buffIn = input->buffer();
-    BT* buffOut = output->buffer();
-
-    for(size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex)
-    {
-        _decoder.decode_siho(buffIn, buffOut);
+        // SFINAE will determine which to use.
+        this->_decode(buffIn, buffOut);
 
         buffIn += inputFrameSize;
         buffOut += outputFrameSize;
