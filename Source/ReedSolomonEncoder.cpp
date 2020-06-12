@@ -114,6 +114,7 @@ void ReedSolomonEncoder<BT>::work()
     const auto maxInputFrames = elems / inputFrameSize;
     const auto maxOutputFrames = elems / outputFrameSize;
     const auto numFrames = std::min(maxInputFrames, maxOutputFrames);
+    if(0 == numFrames) return;
 
     const BT* buffIn = input->buffer();
     BT* buffOut = output->buffer();

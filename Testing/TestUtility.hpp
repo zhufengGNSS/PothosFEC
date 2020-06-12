@@ -6,13 +6,32 @@
 #include <Pothos/Framework.hpp>
 #include <Pothos/Plugin.hpp>
 
+#include <Poco/RandomStream.h>
+
+#include <string>
+
 namespace FECTests
 {
 
 static constexpr float defaultSNR = 8.0f;
 static constexpr float defaultAmp = 32.0f;
 
-Pothos::BufferChunk getRandomInput(size_t numElems);
+template <typename T = std::uint8_t>
+Pothos::BufferChunk getRandomInput(size_t numElems)
+{
+    Pothos::BufferChunk bufferChunk(typeid(T), numElems);
+
+    Poco::RandomBuf randomBuf;
+    randomBuf.readFromDevice(
+        bufferChunk,
+        bufferChunk.length);
+    for(size_t elem = 0; elem < numElems; ++elem)
+    {
+        bufferChunk.as<T*>()[elem] %= 2;
+    }
+
+    return bufferChunk;
+}
 
 // Note: Pothos::Object::operator== checks that the objects' data is the same,
 // not just the value.

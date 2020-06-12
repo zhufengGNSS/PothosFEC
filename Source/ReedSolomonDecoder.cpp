@@ -32,15 +32,17 @@ class ReedSolomonDecoder: public Pothos::Block
 
         std::vector<int> polyGenCoeffs() const;
 
-        template <typename _RT = RT>
-        EnableIfNotFloatingPoint<_RT> work();
-
-        template <typename _RT = RT>
-        EnableIfFloatingPoint<_RT> work();
+        void work() override;
 
     private:
         aff3ct::tools::RS_polynomial_generator _rsPolyGen;
         aff3ct::module::Decoder_RS_std<BT,RT> _decoder;
+
+        template <typename _RT = RT>
+        EnableIfNotFloatingPoint<_RT> _work();
+
+        template <typename _RT = RT>
+        EnableIfFloatingPoint<_RT> _work();
 };
 
 template <typename BT, typename RT>
@@ -49,7 +51,7 @@ ReedSolomonDecoder<BT,RT>::ReedSolomonDecoder(size_t K, size_t N, size_t T, size
     _rsPolyGen(static_cast<int>(N), static_cast<int>(T)),
     _decoder(static_cast<int>(K), static_cast<int>(N), _rsPolyGen)
 {
-    this->setupInput(0, Pothos::DType(typeid(BT), dimension));
+    this->setupInput(0, Pothos::DType(typeid(RT), dimension));
     this->setupOutput(0, Pothos::DType(typeid(BT), dimension));
 
     this->registerCall(this, POTHOS_FCN_TUPLE(Class, K));
@@ -104,8 +106,15 @@ std::vector<int> ReedSolomonDecoder<BT,RT>::polyGenCoeffs() const
 }
 
 template <typename BT, typename RT>
+void ReedSolomonDecoder<BT,RT>::work()
+{
+    // SFINAE will determine which one to use.
+    this->_work();
+}
+
+template <typename BT, typename RT>
 template <typename _RT>
-EnableIfNotFloatingPoint<_RT> ReedSolomonDecoder<BT,RT>::work()
+EnableIfNotFloatingPoint<_RT> ReedSolomonDecoder<BT,RT>::_work()
 {
     const auto elems = this->workInfo().minElements;
     if(0 == elems) return;
@@ -119,6 +128,7 @@ EnableIfNotFloatingPoint<_RT> ReedSolomonDecoder<BT,RT>::work()
     const auto maxInputFrames = elems / inputFrameSize;
     const auto maxOutputFrames = elems / outputFrameSize;
     const auto numFrames = std::min(maxInputFrames, maxOutputFrames);
+    if(0 == numFrames) return;
 
     const RT* buffIn = input->buffer();
     BT* buffOut = output->buffer();
@@ -137,7 +147,7 @@ EnableIfNotFloatingPoint<_RT> ReedSolomonDecoder<BT,RT>::work()
 
 template <typename BT, typename RT>
 template <typename _RT>
-EnableIfFloatingPoint<_RT> ReedSolomonDecoder<BT,RT>::work()
+EnableIfFloatingPoint<_RT> ReedSolomonDecoder<BT,RT>::_work()
 {
     const auto elems = this->workInfo().minElements;
     if(0 == elems) return;
@@ -151,13 +161,14 @@ EnableIfFloatingPoint<_RT> ReedSolomonDecoder<BT,RT>::work()
     const auto maxInputFrames = elems / inputFrameSize;
     const auto maxOutputFrames = elems / outputFrameSize;
     const auto numFrames = std::min(maxInputFrames, maxOutputFrames);
+    if(0 == numFrames) return;
 
     const RT* buffIn = input->buffer();
     BT* buffOut = output->buffer();
 
     for(size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex)
     {
-        _decoder.decode_hiho(buffIn, buffOut);
+        _decoder.decode_siho(buffIn, buffOut);
 
         buffIn += inputFrameSize;
         buffOut += outputFrameSize;

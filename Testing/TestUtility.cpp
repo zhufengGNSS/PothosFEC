@@ -5,8 +5,6 @@
 
 #include <Pothos/Testing.hpp>
 
-#include <Poco/RandomStream.h>
-
 #include <math.h>
 #include <stdlib.h>
 
@@ -82,22 +80,6 @@ static int uint8_to_err(uint8_t *dst, uint8_t *src, int n)
 /*
  * Test-facing functions
  */
-
-Pothos::BufferChunk getRandomInput(size_t numElems)
-{
-    Pothos::BufferChunk bufferChunk("uint8", numElems);
-
-    Poco::RandomBuf randomBuf;
-    randomBuf.readFromDevice(
-        bufferChunk,
-        numElems);
-    for(size_t elem = 0; elem < numElems; ++elem)
-    {
-        bufferChunk.as<std::uint8_t*>()[elem] %= 2;
-    }
-
-    return bufferChunk;
-}
 
 // Note: Pothos::Object::operator== checks that the objects' data is the same,
 // not just the value.
