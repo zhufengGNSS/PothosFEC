@@ -9,6 +9,7 @@
 
 #include <aff3ct.hpp>
 
+#include <cstring>
 #include <vector>
 
 template <typename BT, typename RT>
@@ -123,25 +124,49 @@ void ReedSolomonDecoder<BT,RT>::work()
     const auto inputFrameSize = this->N();
     const auto outputFrameSize = this->K();
 
-    const auto maxInputFrames = elems / inputFrameSize;
-    const auto maxOutputFrames = elems / outputFrameSize;
+    const auto maxInputFrames = input->elements() / inputFrameSize;
+    const auto maxOutputFrames = output->elements() / outputFrameSize;
     const auto numFrames = std::min(maxInputFrames, maxOutputFrames);
-    if(0 == numFrames) return;
 
     const RT* buffIn = input->buffer();
     BT* buffOut = output->buffer();
 
-    for(size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex)
+    if(elems >= inputFrameSize)
     {
-        // SFINAE will determine which to use.
-        this->_decode(buffIn, buffOut);
+        for(size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex)
+        {
+            // SFINAE will determine which to use.
+            this->_decode(buffIn, buffOut);
 
-        buffIn += inputFrameSize;
-        buffOut += outputFrameSize;
+            buffIn += inputFrameSize;
+            buffOut += outputFrameSize;
+        }
+
+        input->consume(numFrames * inputFrameSize);
+        output->produce(numFrames * outputFrameSize);
     }
+    else
+    {
+        // We have an incomplete frame, so leftpad the input with zeros, decode
+        // this padded buffer, and pass along the part we care about.
+        std::vector<RT> paddedInput(inputFrameSize, 0);
+        std::vector<BT> paddedOutput(outputFrameSize, 0);
 
-    input->consume(numFrames * inputFrameSize);
-    output->produce(numFrames * outputFrameSize);
+        const auto inputElemsBytes = elems*sizeof(RT);
+        const auto padding = inputFrameSize - elems;
+        const auto outputElems = outputFrameSize - padding;
+        const auto outputElemsBytes = outputElems*sizeof(BT);
+
+        std::memcpy(&paddedInput[padding], buffIn, inputElemsBytes);
+
+        // SFINAE will determine which to use.
+        this->_decode(paddedInput.data(), paddedOutput.data());
+
+        std::memcpy(buffOut, &paddedOutput[padding], outputElemsBytes);
+
+        input->consume(elems);
+        output->produce(outputElems);
+    }
 }
 
 static Pothos::Block* makeReedSolomonDecoder(

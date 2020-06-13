@@ -50,11 +50,11 @@ static void testReedSolomonCoderSymmetry()
 
     auto sinkOutput = collectorSink.call<Pothos::BufferChunk>("getBuffer");
     POTHOS_TEST_GT(sinkOutput.elements(), 0);
-    /*POTHOS_TEST_EQUAL(randomInput.elements(), sinkOutput.elements());
+    POTHOS_TEST_EQUAL(randomInput.elements(), sinkOutput.elements());
     POTHOS_TEST_EQUALA(
         (const BT*)randomInput,
         (const BT*)sinkOutput,
-        randomInput.elements());*/
+        randomInput.elements());
 }
 
 POTHOS_TEST_BLOCK("/fec/tests", test_reedsolomon_coder_symmetry)

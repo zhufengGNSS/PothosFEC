@@ -9,6 +9,7 @@
 
 #include <aff3ct.hpp>
 
+#include <cstring>
 #include <vector>
 
 template <typename BT>
@@ -111,24 +112,45 @@ void ReedSolomonEncoder<BT>::work()
     const auto inputFrameSize = this->K();
     const auto outputFrameSize = this->N();
 
-    const auto maxInputFrames = elems / inputFrameSize;
-    const auto maxOutputFrames = elems / outputFrameSize;
+    const auto maxInputFrames = input->elements() / inputFrameSize;
+    const auto maxOutputFrames = output->elements() / outputFrameSize;
     const auto numFrames = std::min(maxInputFrames, maxOutputFrames);
-    if(0 == numFrames) return;
 
     const BT* buffIn = input->buffer();
     BT* buffOut = output->buffer();
 
-    for(size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex)
+    if(elems >= inputFrameSize)
     {
-        _encoder.encode(buffIn, buffOut);
+        for(size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex)
+        {
+            _encoder.encode(buffIn, buffOut);
 
-        buffIn += inputFrameSize;
-        buffOut += outputFrameSize;
+            buffIn += inputFrameSize;
+            buffOut += outputFrameSize;
+        }
+
+        input->consume(numFrames * inputFrameSize);
+        output->produce(numFrames * outputFrameSize);
     }
+    else
+    {
+        // We have an incomplete frame, so leftpad the input with zeros, encode
+        // this padded buffer, and pass along the part we care about.
+        std::vector<BT> paddedInput(inputFrameSize, 0);
+        std::vector<BT> paddedOutput(outputFrameSize, 0);
 
-    input->consume(numFrames * inputFrameSize);
-    output->produce(numFrames * outputFrameSize);
+        const auto inputElemsBytes = elems*sizeof(BT);
+        const auto padding = inputFrameSize - elems;
+        const auto outputElems = outputFrameSize - padding;
+        const auto outputElemsBytes = outputElems*sizeof(BT);
+
+        std::memcpy(&paddedInput[padding], buffIn, inputElemsBytes);
+        _encoder.encode(paddedInput.data(), paddedOutput.data());
+        std::memcpy(buffOut, &paddedOutput[padding], outputElemsBytes);
+
+        input->consume(elems);
+        output->produce(outputElems);
+    }
 }
 
 static Pothos::Block* makeReedSolomonEncoder(
