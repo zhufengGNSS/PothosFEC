@@ -10,6 +10,7 @@
 #include <aff3ct.hpp>
 
 #include <algorithm>
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -129,6 +130,35 @@ void PolarEncoder<T>::work()
     output->produce(numFrames * outputLen);
 }
 
+// TODO: how to handle AFF3CT_MULTI_PREC types?
+
+/*
+ * |PothosDoc Polar Encoder
+ *
+ * |category /FEC/Encoders
+ * |keywords N K frozen
+ * |factory /fec/polar_encoder(dtype,K,N,frozenBits)
+ *
+ * |param dtype[Data Type] The block data type.
+ * |widget DTypeChooser(int8=1,int16=1,int32=1,int64=1)
+ * |default "int8"
+ * |preview disable
+ *
+ * |param K[Num Information Bits]
+ * |widget SpinBox(minimum=2)
+ * |default 2
+ * |preview enable
+ *
+ * |param N[Num Bit Channels]
+ * |widget SpinBox(minimum=2)
+ * |default 3
+ * |preview enable
+ *
+ * |param frozenBits[Frozen Bits] Must be of length N - K.
+ * |widget LineEdit()
+ * |default [true,false,false]
+ * |preview enable
+ */
 static Pothos::Block* makePolarEncoder(
     const Pothos::DType& dtype,
     size_t K,
