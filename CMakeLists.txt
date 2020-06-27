@@ -50,9 +50,11 @@ POTHOS_MODULE_UTIL(
         Source/ConvolutionDocs.cpp
         Source/errnoname.c
         Source/GenericConvolution.cpp
+        Source/GRGenericEncoder.cpp
         Source/PolarEncoder.cpp
         Source/LTETurboDecoder.cpp
         Source/LTETurboEncoder.cpp
+        Source/RepetitionEncoder.cpp
         Source/Utility.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/ModuleInfo.cpp
 
