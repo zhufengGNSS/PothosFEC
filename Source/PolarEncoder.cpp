@@ -1,7 +1,7 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "Utility.hpp"
+#include "GRGenericEncoder.hpp"
 
 #include <Pothos/Framework.hpp>
 #include <Pothos/Plugin.hpp>
@@ -9,10 +9,9 @@
 #include <gnuradio/fec/polar_encoder.h>
 
 #include <cstdint>
-#include <iostream>
 #include <vector>
 
-class PolarEncoder: public Pothos::Block
+class PolarEncoder: public GRGenericEncoder
 {
     public:
         static Pothos::Block* make(
@@ -29,11 +28,6 @@ class PolarEncoder: public Pothos::Block
             const std::vector<std::uint8_t>& frozenBitValues,
             bool isPacked);
         virtual ~PolarEncoder();
-
-        void work() override;
-
-    private:
-        gr::fec::generic_encoder::sptr _polarEncoderSPtr;
 };
 
 Pothos::Block* PolarEncoder::make(
@@ -53,35 +47,18 @@ PolarEncoder::PolarEncoder(
     const std::vector<std::uint8_t>& frozenBitValues,
     bool isPacked
 ):
-    Pothos::Block(),
-    _polarEncoderSPtr(gr::fec::code::polar_encoder::make(
-                          static_cast<int>(blockSize),
-                          static_cast<int>(numInfoBits),
-                          frozenBitPositions,
-                          frozenBitValues,
-                          isPacked))
+    GRGenericEncoder(gr::fec::code::polar_encoder::make(
+                         static_cast<int>(blockSize),
+                         static_cast<int>(numInfoBits),
+                         frozenBitPositions,
+                         frozenBitValues,
+                         isPacked))
 {
     this->setupInput(0, Pothos::DType("uint8"));
     this->setupOutput(0, Pothos::DType("uint8"));
 }
 
 PolarEncoder::~PolarEncoder(){}
-
-void PolarEncoder::work()
-{
-    const auto minSize = std::max(_polarEncoderSPtr->get_input_size(), _polarEncoderSPtr->get_output_size());
-
-    const auto elems = this->workInfo().minElements;
-    if(elems < static_cast<size_t>(minSize)) return;
-
-    const auto input = this->input(0);
-    const auto output = this->output(0);
-
-    _polarEncoderSPtr->generic_work(input, output);
-
-    input->consume(_polarEncoderSPtr->get_input_size());
-    output->produce(_polarEncoderSPtr->get_output_size());
-}
 
 //
 // Registration
