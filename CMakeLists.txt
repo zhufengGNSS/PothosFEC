@@ -51,6 +51,8 @@ POTHOS_MODULE_UTIL(
         Source/GRGenericEncoder.cpp
         Source/PolarEncoder.cpp
         Source/PolarEncoderSystematic.cpp
+        Source/LDPCEncoder.cpp
+        Source/LDPCParMatrixEncoder.cpp
         Source/LTETurboDecoder.cpp
         Source/LTETurboEncoder.cpp
         Source/RepetitionEncoder.cpp
