@@ -9,9 +9,46 @@
 GRGenericEncoder::GRGenericEncoder(const gr::fec::generic_encoder::sptr& genericEncoderSPtr):
     Pothos::Block(),
     _genericEncoderSPtr(genericEncoderSPtr)
-{}
+{
+    this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericEncoder, rate));
+    this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericEncoder, inputSize));
+    this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericEncoder, outputSize));
+    this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericEncoder, inputConversion));
+    this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericEncoder, outputConversion));
+
+    this->registerProbe("rate");
+    this->registerProbe("inputSize");
+    this->registerProbe("outputSize");
+    this->registerProbe("inputConversion");
+    this->registerProbe("outputConversion");
+}
 
 GRGenericEncoder::~GRGenericEncoder(){}
+
+double GRGenericEncoder::rate() const
+{
+    return _genericEncoderSPtr->rate();
+}
+
+int GRGenericEncoder::inputSize() const
+{
+    return _genericEncoderSPtr->get_input_size();
+}
+
+int GRGenericEncoder::outputSize() const
+{
+    return _genericEncoderSPtr->get_output_size();
+}
+
+std::string GRGenericEncoder::inputConversion() const
+{
+    return _genericEncoderSPtr->get_input_conversion();
+}
+
+std::string GRGenericEncoder::outputConversion() const
+{
+    return _genericEncoderSPtr->get_output_conversion();
+}
 
 void GRGenericEncoder::work()
 {

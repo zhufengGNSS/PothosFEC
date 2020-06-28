@@ -20,6 +20,16 @@ class GRGenericEncoder: public Pothos::Block
         GRGenericEncoder(const gr::fec::generic_encoder::sptr& genericEncoderSPtr);
         virtual ~GRGenericEncoder();
 
+        double rate() const;
+
+        int inputSize() const;
+
+        int outputSize() const;
+
+        std::string inputConversion() const;
+
+        std::string outputConversion() const;
+
         virtual void work() override;
 
     protected:
