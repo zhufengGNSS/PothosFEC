@@ -3,16 +3,9 @@
 
 #pragma once
 
-#include "Utility.hpp"
-
 #include <Pothos/Framework.hpp>
-#include <Pothos/Plugin.hpp>
 
 #include <gnuradio/fec/generic_decoder.h>
-
-#include <cstdint>
-#include <iostream>
-#include <vector>
 
 class GRGenericDecoder: public Pothos::Block
 {
@@ -22,23 +15,23 @@ class GRGenericDecoder: public Pothos::Block
 
         double rate() const;
 
-        int inputSize() const;
+        size_t inputSize() const;
 
-        int outputSize() const;
+        size_t outputSize() const;
 
-        int history() const;
+        size_t history() const;
 
         float shift() const;
 
-        int inputItemSize() const;
+        size_t inputItemSize() const;
 
-        int outputItemSize() const;
+        size_t outputItemSize() const;
 
         std::string inputConversion() const;
 
         std::string outputConversion() const;
 
-        float iterations() const;
+        ssize_t iterations() const;
 
         virtual void work() override;
 

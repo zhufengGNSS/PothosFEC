@@ -13,14 +13,22 @@ GRGenericDecoder::GRGenericDecoder(const gr::fec::generic_decoder::sptr& generic
     this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericDecoder, rate));
     this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericDecoder, inputSize));
     this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericDecoder, outputSize));
+    this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericDecoder, history));
+    this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericDecoder, shift));
+    this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericDecoder, inputItemSize));
+    this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericDecoder, outputItemSize));
     this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericDecoder, inputConversion));
     this->registerCall(this, POTHOS_FCN_TUPLE(GRGenericDecoder, outputConversion));
 
     this->registerProbe("rate");
     this->registerProbe("inputSize");
     this->registerProbe("outputSize");
+    this->registerProbe("history");
+    this->registerProbe("shift");
     this->registerProbe("inputConversion");
     this->registerProbe("outputConversion");
+    this->registerProbe("inputItemSize");
+    this->registerProbe("outputItemSize");
 }
 
 GRGenericDecoder::~GRGenericDecoder(){}
@@ -30,19 +38,19 @@ double GRGenericDecoder::rate() const
     return _genericDecoderSPtr->rate();
 }
 
-int GRGenericDecoder::inputSize() const
+size_t GRGenericDecoder::inputSize() const
 {
-    return _genericDecoderSPtr->get_input_size();
+    return static_cast<size_t>(_genericDecoderSPtr->get_input_size());
 }
 
-int GRGenericDecoder::outputSize() const
+size_t GRGenericDecoder::outputSize() const
 {
-    return _genericDecoderSPtr->get_output_size();
+    return static_cast<size_t>(_genericDecoderSPtr->get_output_size());
 }
 
-int GRGenericDecoder::history() const
+size_t GRGenericDecoder::history() const
 {
-    return _genericDecoderSPtr->get_history();
+    return static_cast<size_t>(_genericDecoderSPtr->get_history());
 }
 
 float GRGenericDecoder::shift() const
@@ -50,14 +58,14 @@ float GRGenericDecoder::shift() const
     return _genericDecoderSPtr->get_shift();
 }
 
-int GRGenericDecoder::inputItemSize() const
+size_t GRGenericDecoder::inputItemSize() const
 {
-    return _genericDecoderSPtr->get_input_item_size();
+    return static_cast<size_t>(_genericDecoderSPtr->get_input_item_size());
 }
 
-int GRGenericDecoder::outputItemSize() const
+size_t GRGenericDecoder::outputItemSize() const
 {
-    return _genericDecoderSPtr->get_output_item_size();
+    return static_cast<size_t>(_genericDecoderSPtr->get_output_item_size());
 }
 
 std::string GRGenericDecoder::inputConversion() const

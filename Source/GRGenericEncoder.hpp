@@ -3,16 +3,9 @@
 
 #pragma once
 
-#include "Utility.hpp"
-
 #include <Pothos/Framework.hpp>
-#include <Pothos/Plugin.hpp>
 
 #include <gnuradio/fec/generic_encoder.h>
-
-#include <cstdint>
-#include <iostream>
-#include <vector>
 
 class GRGenericEncoder: public Pothos::Block
 {
@@ -22,9 +15,9 @@ class GRGenericEncoder: public Pothos::Block
 
         double rate() const;
 
-        int inputSize() const;
+        size_t inputSize() const;
 
-        int outputSize() const;
+        size_t outputSize() const;
 
         std::string inputConversion() const;
 

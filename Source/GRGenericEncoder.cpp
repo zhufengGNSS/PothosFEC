@@ -30,14 +30,14 @@ double GRGenericEncoder::rate() const
     return _genericEncoderSPtr->rate();
 }
 
-int GRGenericEncoder::inputSize() const
+size_t GRGenericEncoder::inputSize() const
 {
-    return _genericEncoderSPtr->get_input_size();
+    return static_cast<size_t>(_genericEncoderSPtr->get_input_size());
 }
 
-int GRGenericEncoder::outputSize() const
+size_t GRGenericEncoder::outputSize() const
 {
-    return _genericEncoderSPtr->get_output_size();
+    return static_cast<size_t>(_genericEncoderSPtr->get_output_size());
 }
 
 std::string GRGenericEncoder::inputConversion() const
