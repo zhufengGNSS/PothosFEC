@@ -52,6 +52,7 @@ POTHOS_MODULE_UTIL(
         Source/GRGenericEncoder.cpp
         Source/PolarEncoder.cpp
         Source/PolarEncoderSystematic.cpp
+        Source/LDPCBitFlipDecoder.cpp
         Source/LDPCDecoder.cpp
         Source/LDPCEncoder.cpp
         Source/LDPCParMatrixEncoder.cpp

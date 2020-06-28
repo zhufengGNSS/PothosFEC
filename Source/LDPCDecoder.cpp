@@ -38,7 +38,9 @@ Pothos::Block* LDPCDecoder::make(const std::string& afile, float sigma, size_t m
 
 LDPCDecoder::LDPCDecoder(const std::string& afile, float sigma, size_t maxIterations):
     GRGenericDecoder(gr::fec::ldpc_decoder::make(afile, sigma, static_cast<int>(maxIterations))),
-    _afilePath(afile)
+    _afilePath(afile),
+    _sigma(sigma),
+    _maxIterations(maxIterations)
 {
     this->setupInput(0, Pothos::DType("uint8"));
     this->setupOutput(0, Pothos::DType("uint8"));
