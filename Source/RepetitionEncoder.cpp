@@ -19,7 +19,6 @@ class RepetitionEncoder: public GRGenericEncoder
         RepetitionEncoder(size_t frameSize, size_t numRepetitions);
         virtual ~RepetitionEncoder();
 
-        // TODO: move to base class?
         void setFrameSize(size_t frameSize);
 };
 
