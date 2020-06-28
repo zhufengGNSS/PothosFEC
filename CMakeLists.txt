@@ -62,6 +62,7 @@ POTHOS_MODULE_UTIL(
         Testing/TestConvolution.cpp
         Testing/TestLTETurboCoders.cpp
         Testing/TestModuleInfo.cpp
+        Testing/TestRepetitionCoders.cpp
         Testing/TestUtility.cpp
     LIBRARIES
         ${TURBOFEC_LIBRARIES}

@@ -20,10 +20,12 @@ void GRGenericEncoder::work()
     const auto elems = this->workInfo().minElements;
     if(elems < static_cast<size_t>(minSize)) return;
 
-    const auto input = this->input(0);
-    const auto output = this->output(0);
+    auto input = this->input(0);
+    auto output = this->output(0);
 
-    _genericEncoderSPtr->generic_work(input, output);
+    _genericEncoderSPtr->generic_work(
+        input->buffer(),
+        output->buffer());
 
     input->consume(_genericEncoderSPtr->get_input_size());
     output->produce(_genericEncoderSPtr->get_output_size());
