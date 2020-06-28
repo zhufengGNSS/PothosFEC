@@ -48,6 +48,7 @@ POTHOS_MODULE_UTIL(
         Source/ConvolutionDocs.cpp
         Source/errnoname.c
         Source/GenericConvolution.cpp
+        Source/GRGenericDecoder.cpp
         Source/GRGenericEncoder.cpp
         Source/PolarEncoder.cpp
         Source/PolarEncoderSystematic.cpp
