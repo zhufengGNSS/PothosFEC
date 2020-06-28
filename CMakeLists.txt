@@ -50,6 +50,7 @@ POTHOS_MODULE_UTIL(
         Source/GenericConvolution.cpp
         Source/GRGenericEncoder.cpp
         Source/PolarEncoder.cpp
+        Source/PolarEncoderSystematic.cpp
         Source/LTETurboDecoder.cpp
         Source/LTETurboEncoder.cpp
         Source/RepetitionEncoder.cpp
