@@ -13,7 +13,6 @@ list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
 ########################################################################
 find_package(TurboFEC REQUIRED)
 find_package(Threads REQUIRED)
-find_package(aff3ct REQUIRED)
 find_package(Gnuradio 3.8 REQUIRED COMPONENTS blocks fec)
 find_package(GSL REQUIRED)
 
@@ -42,7 +41,6 @@ include(PothosUtil)
 POTHOS_MODULE_UTIL(
     TARGET FECBlocks
     SOURCES
-        Source/AZCWEncoder.cpp
         Source/BitErrorRate.cpp
         Source/ConvCodes.c
         Source/Convolution.cpp
@@ -66,7 +64,6 @@ POTHOS_MODULE_UTIL(
         Testing/TestUtility.cpp
     LIBRARIES
         ${TURBOFEC_LIBRARIES}
-        aff3ct::aff3ct-shared-lib
         gnuradio::gnuradio-fec
         gsl::gsl
     ENABLE_DOCS ON
