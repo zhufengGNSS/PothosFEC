@@ -42,7 +42,7 @@ LDPCDecoder::LDPCDecoder(const std::string& afile, float sigma, size_t maxIterat
     _sigma(sigma),
     _maxIterations(maxIterations)
 {
-    this->setupInput(0, Pothos::DType("uint8"));
+    this->setupInput(0, Pothos::DType("float32"));
     this->setupOutput(0, Pothos::DType("uint8"));
 
     this->registerCall(this, POTHOS_FCN_TUPLE(LDPCDecoder, afilePath));

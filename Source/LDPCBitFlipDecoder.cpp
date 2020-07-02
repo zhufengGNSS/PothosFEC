@@ -73,7 +73,7 @@ LDPCBitFlipDecoder::LDPCBitFlipDecoder(
 
     this->_genericDecoderSPtr = gr::fec::code::ldpc_bit_flip_decoder::make(fecMtrxSPtr, _maxIterations);
 
-    this->setupInput(0, Pothos::DType("uint8"));
+    this->setupInput(0, Pothos::DType("float32"));
     this->setupOutput(0, Pothos::DType("uint8"));
 
     this->registerCall(this, POTHOS_FCN_TUPLE(LDPCBitFlipDecoder, afilePath));
