@@ -50,14 +50,17 @@ POTHOS_MODULE_UTIL(
         Source/GenericConvolution.cpp
         Source/GRGenericDecoder.cpp
         Source/GRGenericEncoder.cpp
-        Source/PolarEncoder.cpp
-        Source/PolarEncoderSystematic.cpp
         Source/LDPCBitFlipDecoder.cpp
         Source/LDPCDecoder.cpp
         Source/LDPCEncoder.cpp
         Source/LDPCParMatrixEncoder.cpp
         Source/LTETurboDecoder.cpp
         Source/LTETurboEncoder.cpp
+        Source/PolarDecoderSC.cpp
+        Source/PolarDecoderSCL.cpp
+        Source/PolarDecoderSCSystematic.cpp
+        Source/PolarEncoder.cpp
+        Source/PolarEncoderSystematic.cpp
         Source/RepetitionEncoder.cpp
         Source/Utility.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/ModuleInfo.cpp
