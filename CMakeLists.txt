@@ -61,6 +61,7 @@ POTHOS_MODULE_UTIL(
         Source/PolarDecoderSCSystematic.cpp
         Source/PolarEncoder.cpp
         Source/PolarEncoderSystematic.cpp
+        Source/RepetitionDecoder.cpp
         Source/RepetitionEncoder.cpp
         Source/Utility.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/ModuleInfo.cpp
