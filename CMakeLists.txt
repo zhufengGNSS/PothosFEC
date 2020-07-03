@@ -68,6 +68,7 @@ POTHOS_MODULE_UTIL(
 
         Testing/TestBitErrorRate.cpp
         Testing/TestConvolution.cpp
+        Testing/TestLDPCCoders.cpp
         Testing/TestLTETurboCoders.cpp
         Testing/TestModuleInfo.cpp
         Testing/TestRepetitionCoders.cpp
