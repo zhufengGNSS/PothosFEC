@@ -20,25 +20,28 @@ template <typename T>
 struct PunctureTraits
 {
     using UIntType = T;
-
-    static constexpr UIntType Mask = std::numeric_limits<UIntType>::max();
 };
 
 template <>
 struct PunctureTraits<float>
 {
     using UIntType = std::uint32_t;
-
-    static constexpr UIntType Mask = std::numeric_limits<UIntType>::max();
 };
 
 template <>
 struct PunctureTraits<double>
 {
     using UIntType = std::uint64_t;
-
-    static constexpr UIntType Mask = std::numeric_limits<UIntType>::max();
 };
+
+template <typename T>
+static typename PunctureTraits<T>::UIntType generateMask(size_t punctureSize)
+{
+    typename PunctureTraits<T>::UIntType mask = 0;
+    for(size_t i = 0; i < punctureSize; ++i) mask |= (1 << i);
+
+    return mask;
+}
 
 //
 // Block implementation
@@ -50,7 +53,6 @@ class Puncture: public Pothos::Block
     public:
         using Class = Puncture<T>;
         using UIntType = typename PunctureTraits<T>::UIntType;
-        static constexpr UIntType Mask = PunctureTraits<T>::Mask;
         static constexpr size_t TSizeBytes = sizeof(T);
         static constexpr size_t TSizeBits = TSizeBytes*8;
 
@@ -74,8 +76,11 @@ class Puncture: public Pothos::Block
         size_t _delay;
         size_t _numPunctureHoles;
 
+        void _work(const Pothos::BufferChunk& bufferChunkIn, const Pothos::BufferChunk& bufferChunkOut);
         void _msgWork();
-        void _updateNumPunctureHoles();
+        void _recalculatePunctureVars();
+
+        inline double outputMultiplier() const {return static_cast<double>(_punctureSize - _numPunctureHoles);}
 };
 
 template <typename T>
@@ -125,18 +130,16 @@ void Puncture<T>::setPunctureSize(size_t punctureSize)
     }
 
     _punctureSize = punctureSize;
+    this->_recalculatePunctureVars();
     this->emitSignal("punctureSizeChanged", _punctureSize);
-
-    this->_updateNumPunctureHoles();
 }
 
 template <typename T>
 void Puncture<T>::setPuncturePattern(Puncture<T>::UIntType puncturePattern)
 {
     _puncturePattern = puncturePattern;
+    this->_recalculatePunctureVars();
     this->emitSignal("puncturePatternChanged", _puncturePattern);
-
-    this->_updateNumPunctureHoles();
 }
 
 template <typename T>
@@ -148,26 +151,81 @@ void Puncture<T>::setDelay(size_t delay)
     }
 
     _delay = delay;
+    this->_recalculatePunctureVars();
     this->emitSignal("delayChanged", _delay);
-
-    this->_updateNumPunctureHoles();
 }
 
 template <typename T>
 void Puncture<T>::work()
 {
+    auto input = this->input(0);
+    auto output = this->output(0);
+
+    while(input->hasMessage()) this->_msgWork();
+
+    const auto outputElems = this->workInfo().minElements;
+    if(outputElems < this->outputMultiplier()) return;
+
+    this->_work(input->buffer(), output->buffer());
+    input->consume(outputElems / this->outputMultiplier());
+    output->produce(outputElems);
+}
+
+template <typename T>
+void Puncture<T>::_work(
+    const Pothos::BufferChunk& bufferChunkIn,
+    const Pothos::BufferChunk& bufferChunkOut)
+{
+    const auto outputElems = std::min(bufferChunkIn.elements(), bufferChunkOut.elements());
+
+    const Puncture<T>::UIntType* buffIn = bufferChunkIn;
+    Puncture<T>::UIntType* buffOut = bufferChunkOut;
+
+    for(size_t i = 0, k = 0; i < outputElems; ++i)
+    {
+        for(size_t j = 0; j < _punctureSize; ++j)
+        {
+            if((_puncturePattern >> (_punctureSize - 1 - j)) & 1)
+            {
+                buffOut[k++] = buffIn[i * _punctureSize + j];
+            }
+        }
+    }
 }
 
 template <typename T>
 void Puncture<T>::_msgWork()
 {
+    auto input = this->input(0);
+    auto output = this->output(0);
 
+    for(size_t msgIndex = 0; msgIndex < input->totalMessages(); ++msgIndex)
+    {
+        auto msg = input->popMessage();
+        if(msg.type() == typeid(Pothos::Packet))
+        {
+            const auto payload = msg.convert<Pothos::Packet>().payload;
+            Pothos::BufferChunk outputPayload(payload.dtype, payload.elements() * this->outputMultiplier());
+
+            this->_work(payload, outputPayload);
+
+            Pothos::Packet outputPkt;
+            outputPkt.payload = outputPayload;
+            output->postMessage(std::move(outputPkt));
+        }
+    }
 }
 
 template <typename T>
-void Puncture<T>::_updateNumPunctureHoles()
+void Puncture<T>::_recalculatePunctureVars()
 {
-    UIntType mask = Puncture<T>::Mask;
+    auto mask = generateMask<T>(_punctureSize);
+
+    for(size_t i = 0; i < _delay; ++i)
+    {
+        _puncturePattern = ((_puncturePattern & 1) << (_punctureSize - 1)) + (_puncturePattern + 1);
+    }
+    _puncturePattern &= mask;
 
     const auto maskPopCnt = popcnt(&mask, Puncture<T>::TSizeBytes);
     const auto puncPatPopCnt = popcnt(&_puncturePattern, Puncture<T>::TSizeBytes);
